@@ -1,0 +1,29 @@
+Rev: 0103.05.02.2011
+
+This is my first real program written using Python.  I have written other programs, but they were simply written to learn the language, this is my first attempt to solve a real problem using Python.
+
+The assignment:
+
+This assignment will simulate the top-down parsing as performed by a compiler when given an input arithmetic expression to be checked for correct syntax. The logic implemented in this program is just a starting point, as an actual compiler will use additional concepts so that it can do its job much faster. We know the rules of a grammar are in the form: V -> string, where V is a variable and string is a finite sequence of variables and terminals. If we are given the rules of a grammar, the symbols on the left sides of the arrows will be the variables. Any symbol which does not appear on the left side of a rule must be a
+terminal. As an example, consider the following context-free grammar as given on page 128 of the textbook:
+
+E -> E + T | T
+T -> T * F | F
+F -> (E) | a
+
+Remember the convention that the variable on the left-hand side of the first rule is the start symbol. To keep things simple, variables and terminals will be single symbols and there will be at most two terminals – a and b. (The program can always be extended later to handle variable string symbols, and terminals can be replaced by identifiers.)
+
+The pushdown automata we will model is based on Lemma 2.21 of the textbook. Example 2.25 provides a good picture of what we need to do. That pushdown automaton begins by pushing a ”$” on the stack followed by pushing the start symbol on the stack. That took us to the qloop state. Since we are implementing the stack, we can do away with the $ symbol and just begin with the start symbol on the stack. In the qloop state, the reading of an input symbol will cause push or pop operations. Nondeterminism will cause copies of the pushdown automata to be created. Therefore, we need to be able to model a PDA and keep track of all created versions that are running.
+
+Once we enter state qloop, we stay there until one of the following conditions occur:
+
+1. We are out of input symbols and the stack is empty. Then we accept the input string as syntactically
+correct.
+2. We are out of input symbols and the stack is nonempty. Then we will reject the input string.
+3. We are not out of input symbols, but the next input symbol does not match the terminal on top of the the stack. (or the stack is empty). We reject the input string.
+
+We will need to model each version of a PDA in use. Each PDA will have its own stack and an index into the input string, which must be kept in array storage. The state will never change, since we stay in qloop until we reach one of the three conditions above. Then the PDA either accepts or ”hangs”.
+
+We will also need a queue to store the PDA models. We will continually make passes through all the PDA models in the queue until we reach one of the above conditions. On a typical pass, each PDA model is dequeued and the top symbol of its stack is examined. If it is a variable, then we look for a rule where that variable occurs on the left hand side, pop the variable off the stack, and push on the symbols on the right hand side of the rule. If the variable is on the left hand side of another rule, then ”clone” the PDA, including the index into the input storage string and replace the cloned version’s variable with the right hand side of this other rule.
+
+One thing we should note is that this program could exhibit exponential run time behavior, based on the length of the input string, which is why this is a simulation of a compiler and not the actual way a compiler works. The input expression strings we will consider should be no lnger than 10 characters long with no embedded blanks. Your queue should have an expected maximum size of 1000.
