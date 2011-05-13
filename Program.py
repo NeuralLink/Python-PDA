@@ -1,13 +1,4 @@
-##    The goal of this program is to simulate the top-down parsing as performed by a compiler when given an input
-##    arithmetic expression to be checked for correct syntax. The logic implemented in this program is just a
-##    starting point, as an actual compiler will use additional concepts so that it can do its job much faster. We
-##    know the rules of a grammar are in the form: V → string, where V is a variable and string is a ﬁnite
-##    sequence of variables and terminals. If we are given the rules of a grammar, the symbols on the left sides
-##    of the arrows will be the variables. Any symbol which does not appear on the left side of a rule must be a
-##    terminal.
-
-
-
+import copy
 
 class Rule:
     def __init__(self , variable , productions):
@@ -24,6 +15,7 @@ def read_rules(): #Read rules from 'rules.cfg' into a list called rules_input
 
 def read_exp():  #Expression is read from 'expression.cfg' into list exp in reverse order, removing whitespace.
     i = 0
+    global exp
     exp_file = open("expression.cfg", "rt")
     data = exp_file.read()
     chars = data.split(" ")
@@ -52,111 +44,63 @@ def print_reject():  #Prints Reject and exits program.
     print("************************************")
     exit()
 
+def get_rule(symbol):
+    global rules
+    for rule in rules:
+        if rule.variable == symbol:
+            return rule
+    return False
 
-def operation():  #Performs the operations of a PDA.  Recursive.
-    #added x,y counting variables to count up and allow different variables and productions to be tested.
-    global x
-    global y
-    global var
-    global kill
-    global match
-
-    print("At the beginning of operation, stack = ", stack)
-    var = stack.pop()
-    test()
-    if match == True:
-        match = False
-        operation()
-
-    print("var =", var)
-    if var == rules[x].variable:
-        if len(rules[x].productions) <= y:
-            string = rules[x].productions[y].split(" ")
-        else:
-            string = rules[x].productions[y].split(" ")
-        for s in string[::-1]:
-            stack.append(s)
-        print("Stack after rules applied( Marker 1)", stack) # MARKER ONE
-        if kill == True:
-            kill = False
-            for op in stack:
-                del op
-            stack.append(rules[0].variable)
-
-            if y <= len(rules[x].productions):
-                y = y + 1
-            elif x < len(rules):
-                y = 0
-                x = x + 1
-            else:
-                print_reject()
-            operation()
-        operation()
-    elif x <= len(rules):
-        y = 0
-        x = x + 1
-    else:
-        print_reject()
-
-    print("End of Operation (MARKER TWO", stack) # MARKER TWO
-
-
-
-
-def test():
-    global i
-    global var
-    global exp
-    global match
-    global length
-    #test if
-    if var == exp[i]:
+def operation(stack, exp):  #Performs the operations of a PDA.  Recursive.
+    if len(stack) > len(exp) or (len(stack) == 0 and len(exp) > 0):
+        return
+    current_symbol = stack.pop()
+    if current_symbol == exp[-1]:
         exp.pop()
-        match = True
+        test(stack , exp)
+        operation(copy.deepcopy(stack) , copy.deepcopy(exp))
+    rule = get_rule(current_symbol)
+    if rule == False:
+        return
+    for production in rule.productions:
+        new_stack = copy.deepcopy(stack)
+        for s in production.split(" ")[::-1]:
+            new_stack.append(s)
+        operation(new_stack, copy.deepcopy(exp))
 
+def test(stack, exp):
     if len(stack) == 0 and len(exp) == 0:
         print("\n\n")
         print("************************************")
         print("*             ACCEPT               *")
         print("************************************")
         exit()
-        #accept program
-
-    if len(stack) > length: #Kills stack if length of stack is greater than length of original expression
-        global kill
-        print("\n\n")
-        print("************************************")
-        print("* Stack has exceeded String length *")
-        print("************************************")
-        kill = True
+    else:
+        return False
 
 def main():
     global length
     global rules
+    global var_test
     print("Rules:")
     read_rules()
-
+    global exp
     print("Expression:")
-    length = read_exp()
+    read_exp()
     print(exp)
-    print("Expression length:", length)
     rules = divide_rules()
-
-    #print("\n\nThis should be E:")
-    #print(rules[0].variable)
+    for rule in rules:
+        var_test.append(rule.variable)
+    print("variables =", var_test)
+    stack = []
     stack.append(rules[0].variable)
-
-    operation()
+    operation(stack, exp)
+    print_reject()
 
 exp = []
-test_exp = []
+var_test = []
 rules_input = []
 stack = []
-i = int(0)
-x = int(0)
-y = int(0)
-z = int(0)
-kill = False
-match = False
-
+var = []
+final= []
 main()
